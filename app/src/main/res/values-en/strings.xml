@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ShopBT</string>
+    <string name="add_product">Add Product</string>
+    <string name="udost_pnij">Share</string>
+    <string name="wy_lij_sms">Send SMS</string>
+    <string name="lista_zam_wie">Order List</string>
+    <string name="moje_konto">My Account</string>
+    <string name="zmie_j_zyk">Change Language</string>
+    <string name="o_programie">About</string>
+    <string name="wyloguj">Log Out</string>
+    <string name="product_name">Product Name</string>
+    <string name="product_description">Product Description</string>
+    <string name="product_price">Product Price</string>
+    <string name="choose_image">Choose Image</string>
+    <string name="add_product_admin">Add Product</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="log_in">Log In</string>
+    <string name="register">Register</string>
+    <string name="imi_i_nazwisko_nazwa_firmy">Full Name / Company Name</string>
+    <string name="email">Email</string>
+    <string name="zam_w">Order</string>
+    <string name="sklep">Shop</string>
+    <string name="koszyk_0">Cart: 0</string>
+    <string name="change_photo">Change Photo</string>
+    <string name="change_email">Change Email</string>
+    <string name="change_password">Change Password</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="password_register">Password</string>
+    <string name="register_button">Register</string>
+    <string name="email_register">Email</string>
+    <string name="username_register">Username</string>
+    <string name="quantity_order">Quantity: %1$d</string>
+    <string name="price_order">Price: %1$.2f PLN</string>
+    <string name="about">About the program</string>
+    <string name="autor">Author: %1$s</string>
+    <string name="cart">Cart: %1$d</string>
+    <string name="total_price">Total: %.2f PLN</string>
+</resources>

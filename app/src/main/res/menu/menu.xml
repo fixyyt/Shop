@@ -1,0 +1,37 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/account"
+        android:title="@string/moje_konto"
+        app:showAsAction="always|withText" />
+
+    <item
+        android:id="@+id/orders"
+        android:title="@string/lista_zam_wie"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/sendSms"
+        android:title="@string/wy_lij_sms"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/share"
+        android:title="@string/udost_pnij"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/changeLanguage"
+        android:title="@string/zmie_j_zyk"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/about"
+        android:title="@string/o_programie"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/logout"
+        android:title="@string/wyloguj"
+        app:showAsAction="never" />
+</menu>
