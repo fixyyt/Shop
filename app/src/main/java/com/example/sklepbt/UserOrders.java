@@ -10,18 +10,15 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.sklepbt.Adapters.OrderAdapter;
-import com.example.sklepbt.Classes.Product;
+import com.example.sklepbt.Adapters.UserOrdersAdapter;
+import com.example.sklepbt.Classes.Order;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class UserOrders extends AppCompatActivity {
 
     private DatabaseHelper db;
     private RecyclerView ordersRecyclerView;
-    private OrderAdapter orderAdapter;
     private String loggedInUsername;
 
     @Override
@@ -38,26 +35,18 @@ public class UserOrders extends AppCompatActivity {
 
         db = new DatabaseHelper(this);
         loggedInUsername = getIntent().getStringExtra("username");
-
+        
+        // Pobierz ID użytkownika
         int userId = db.getUserData(loggedInUsername).getId();
-
-        Map<Product, Integer> userOrders = getUserOrdersMap(userId);
 
         ordersRecyclerView = findViewById(R.id.recyclerViewOrders);
         ordersRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        orderAdapter = new OrderAdapter(this, userOrders);
+
+        // Pobierz listę zamówień
+        List<Order> userOrders = db.getUserOrders(userId);
+        
+        // Użyj nowego adaptera
+        UserOrdersAdapter orderAdapter = new UserOrdersAdapter(this, userOrders);
         ordersRecyclerView.setAdapter(orderAdapter);
-    }
-
-    private Map<Product, Integer> getUserOrdersMap(int userId) {
-        List<Product> orderedProducts = db.getUserOrderedProducts(userId);
-        Map<Product, Integer> ordersMap = new HashMap<>();
-
-        for (Product product : orderedProducts) {
-            int quantity = db.getOrderQuantity(userId, product.getId());
-            ordersMap.put(product, quantity);
-        }
-
-        return ordersMap;
     }
 }

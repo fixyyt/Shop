@@ -40,10 +40,16 @@ public class Store extends AppCompatActivity {
     private ProductAdapter productAdapter;
     private DatabaseHelper db;
     private String loggedInUsername;
+    private static final String LANGUAGE_PREF = "language_preference";
 
     @SuppressLint("StringFormatInvalid")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Wczytaj zapisany język przed inicjalizacją widoku
+        android.content.SharedPreferences prefs = getSharedPreferences("Settings", MODE_PRIVATE);
+        String language = prefs.getString(LANGUAGE_PREF, "pl"); // domyślnie polski
+        setLocale(language);
+        
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_store);
@@ -59,6 +65,11 @@ public class Store extends AppCompatActivity {
         db = new DatabaseHelper(this);
         loggedInUsername = getIntent().getStringExtra("username");
 
+        // Sprawdź czy są produkty, jeśli nie - zwiększ wersję bazy danych aby wymusić dodanie domyślnych
+        if (!db.hasProducts()) {
+            db.onUpgrade(db.getWritableDatabase(), 0, 1);
+        }
+
         MaterialTextView cartSummary = findViewById(R.id.cart_summary);
 
         recyclerView = findViewById(R.id.recycler_view);
@@ -66,19 +77,8 @@ public class Store extends AppCompatActivity {
 
         List<Product> products = db.getAllProducts();
         productAdapter = new ProductAdapter(this, products);
-        recyclerView.setAdapter(productAdapter);
-
-        FloatingActionButton fab = findViewById(R.id.fab_add_product);
-        if ("admin".equals(loggedInUsername)) {
-            fab.setVisibility(View.VISIBLE);
-            fab.setOnClickListener(v -> {
-                Intent intent = new Intent(Store.this, AddProduct.class);
-                startActivity(intent);
-
-            });
-        } else {
-            fab.setVisibility(View.GONE);
-        }
+        
+        // Ustaw listener przed załadowaniem stanu koszyka
         productAdapter.setCartUpdateListener(cartSize -> {
             if (cartSize > 0) {
                 cartSummary.setVisibility(View.VISIBLE);
@@ -87,13 +87,36 @@ public class Store extends AppCompatActivity {
                 cartSummary.setVisibility(View.GONE);
             }
         });
+
+        recyclerView.setAdapter(productAdapter);
+        
+        // Wczytaj stan koszyka po utworzeniu adaptera
+        productAdapter.loadCartState();
+        
+        // Ręcznie zaktualizuj widoczność koszyka po załadowaniu stanu
+        int cartSize = productAdapter.getTotalCartSize();
+        if (cartSize > 0) {
+            cartSummary.setVisibility(View.VISIBLE);
+            cartSummary.setText(getString(R.string.cart, cartSize));
+        }
+
+        FloatingActionButton fab = findViewById(R.id.fab_add_product);
+        if ("admin".equals(loggedInUsername)) {
+            fab.setVisibility(View.VISIBLE);
+            fab.setOnClickListener(v -> {
+                Intent intent = new Intent(Store.this, AddProduct.class);
+                startActivity(intent);
+            });
+        } else {
+            fab.setVisibility(View.GONE);
+        }
+
         cartSummary.setOnClickListener(v -> {
             Intent intent = new Intent(Store.this, OrderActivity.class);
             intent.putExtra("cartItems", new HashMap<>(productAdapter.getProductQuantities()));
             intent.putExtra("username", loggedInUsername);
             startActivityForResult(intent, 1);
         });
-
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -154,17 +177,23 @@ public class Store extends AppCompatActivity {
         builder.show();
     }
     private void setLocale(String langCode) {
+        // Zapisz wybrany język w preferencjach
+        android.content.SharedPreferences prefs = getSharedPreferences("Settings", MODE_PRIVATE);
+        android.content.SharedPreferences.Editor editor = prefs.edit();
+        editor.putString(LANGUAGE_PREF, langCode);
+        editor.apply();
+
         Locale locale = new Locale(langCode);
         Locale.setDefault(locale);
 
         Resources resources = getResources();
-        Configuration config = resources.getConfiguration();
+        Configuration config = new Configuration(resources.getConfiguration());
         config.setLocale(locale);
-        getApplicationContext().createConfigurationContext(config);
+        
+        getBaseContext().getResources().updateConfiguration(config, 
+            getBaseContext().getResources().getDisplayMetrics());
 
-        Intent intent = getIntent();
-        finish();
-        startActivity(intent);
+        recreate();
     }
 
     private void about() {
@@ -252,20 +281,25 @@ public class Store extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 1 && resultCode == RESULT_OK) {
             if (data != null && data.getBooleanExtra("clearCart", false)) {
-                // Clear the productQuantities in the adapter
-                productAdapter.getProductQuantities().clear();
-                productAdapter.notifyDataSetChanged();
-
-                // Optional: Clear the cartSummary TextView
+                // Wyczyść koszyk w adapterze
+                productAdapter.clearCart();
+                
+                // Ukryj podsumowanie koszyka
                 MaterialTextView cartSummary = findViewById(R.id.cart_summary);
                 cartSummary.setVisibility(View.GONE);
-
 
                 Toast.makeText(this, "Koszyk został wyczyszczony.", Toast.LENGTH_SHORT).show();
             }
         }
     }
 
-
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Zapisz stan koszyka przy wyjściu z aktywności
+        if (productAdapter != null) {
+            productAdapter.saveCartState();
+        }
+    }
 
 }

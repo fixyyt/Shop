@@ -43,7 +43,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COL_ORDER_DATE = "order_date";
 
     public DatabaseHelper(Context context) {
-        super(context, DATABASE_NAME, null, 6);
+        super(context, DATABASE_NAME, null, 7);
     }
 
     @Override
@@ -74,8 +74,36 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "quantity INTEGER, " +
                 "FOREIGN KEY(order_id) REFERENCES orders(order_id), " +
                 "FOREIGN KEY(product_id) REFERENCES products(id))");
+
+        addDefaultProducts(db);
     }
 
+    private void addDefaultProducts(SQLiteDatabase db) {
+        ContentValues values = new ContentValues();
+        
+        // Produkt 1
+        values.put(COL_PRODUCT_NAME, "Komputer");
+        values.put(COL_PRODUCT_DESCRIPTION, "Szybki komputer gamingowy");
+        values.put(COL_PRODUCT_IMAGE, "android.resource://com.example.sklepbt/drawable/komputer");
+        values.put(COL_PRODUCT_PRICE, 4999);
+        db.insert(TABLE_PRODUCTS, null, values);
+        
+        // Produkt 2
+        values.clear();
+        values.put(COL_PRODUCT_NAME, "Myszka");
+        values.put(COL_PRODUCT_DESCRIPTION, "Mysz komputerowa.");
+        values.put(COL_PRODUCT_IMAGE, "android.resource://com.example.sklepbt/drawable/mysz");
+        values.put(COL_PRODUCT_PRICE, 3);
+        db.insert(TABLE_PRODUCTS, null, values);
+        
+        // Produkt 3
+        values.clear();
+        values.put(COL_PRODUCT_NAME, "Klawiatura");
+        values.put(COL_PRODUCT_DESCRIPTION, "Świeci sie, że to szok.");
+        values.put(COL_PRODUCT_IMAGE, "android.resource://com.example.sklepbt/drawable/klawiatura");
+        values.put(COL_PRODUCT_PRICE, 899);
+        db.insert(TABLE_PRODUCTS, null, values);
+    }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
@@ -284,5 +312,62 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
         cursor.close();
         return quantity;
+    }
+
+    // Dodaj metodę do sprawdzania czy są już produkty
+    public boolean hasProducts() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_PRODUCTS, null);
+        cursor.moveToFirst();
+        int count = cursor.getInt(0);
+        cursor.close();
+        return count > 0;
+    }
+
+    public List<Order> getUserOrders(int userId) {
+        List<Order> orders = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        // Najpierw pobierz wszystkie zamówienia użytkownika
+        String orderQuery = "SELECT * FROM " + TABLE_ORDERS + 
+                           " WHERE " + COL_ORDER_USER_ID + " = ? " +
+                           " ORDER BY " + COL_ORDER_DATE + " DESC";
+        
+        Cursor orderCursor = db.rawQuery(orderQuery, new String[]{String.valueOf(userId)});
+
+        while (orderCursor.moveToNext()) {
+            int orderId = orderCursor.getInt(orderCursor.getColumnIndexOrThrow(COL_ORDER_ID));
+            String orderDate = orderCursor.getString(orderCursor.getColumnIndexOrThrow(COL_ORDER_DATE));
+
+            // Dla każdego zamówienia pobierz jego produkty i ilości
+            String detailsQuery = "SELECT p.*, od.quantity FROM " + TABLE_PRODUCTS + " p " +
+                                "JOIN OrderDetails od ON p.id = od.product_id " +
+                                "WHERE od.order_id = ?";
+            
+            Cursor detailsCursor = db.rawQuery(detailsQuery, new String[]{String.valueOf(orderId)});
+
+            List<Product> products = new ArrayList<>();
+            List<Integer> quantities = new ArrayList<>();
+
+            while (detailsCursor.moveToNext()) {
+                int productId = detailsCursor.getInt(detailsCursor.getColumnIndexOrThrow(COL_PRODUCT_ID));
+                String name = detailsCursor.getString(detailsCursor.getColumnIndexOrThrow(COL_PRODUCT_NAME));
+                String description = detailsCursor.getString(detailsCursor.getColumnIndexOrThrow(COL_PRODUCT_DESCRIPTION));
+                String image = detailsCursor.getString(detailsCursor.getColumnIndexOrThrow(COL_PRODUCT_IMAGE));
+                int price = detailsCursor.getInt(detailsCursor.getColumnIndexOrThrow(COL_PRODUCT_PRICE));
+                int quantity = detailsCursor.getInt(detailsCursor.getColumnIndexOrThrow("quantity"));
+
+                products.add(new Product(productId, name, description, image, price));
+                quantities.add(quantity);
+            }
+            detailsCursor.close();
+
+            if (!products.isEmpty()) {
+                orders.add(new Order(orderId, userId, products, quantities, orderDate));
+            }
+        }
+        orderCursor.close();
+
+        return orders;
     }
 }

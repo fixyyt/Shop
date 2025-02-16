@@ -113,8 +113,10 @@ public class OrderActivity extends AppCompatActivity {
                     Intent resultIntent = new Intent();
                     resultIntent.putExtra("clearCart", true);
                     setResult(RESULT_OK, resultIntent);
+                    
+                    Toast.makeText(this, "Zamówienie zostało złożone pomyślnie!", Toast.LENGTH_SHORT).show();
+                    
                     finish();
-
                 } else {
                     Toast.makeText(this, "Nie udało się zapisać zamówienia.", Toast.LENGTH_SHORT).show();
                 }

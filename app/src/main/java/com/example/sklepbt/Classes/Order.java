@@ -8,6 +8,7 @@ public class Order {
     private List<Product> products;
     private List<Integer> quantities;
     private String orderDate;
+    private double totalPrice;
 
     public Order(int id, int userId, List<Product> products, List<Integer> quantities, String orderDate) {
         this.id = id;
@@ -15,6 +16,14 @@ public class Order {
         this.products = products;
         this.quantities = quantities;
         this.orderDate = orderDate;
+        calculateTotalPrice();
+    }
+
+    private void calculateTotalPrice() {
+        totalPrice = 0;
+        for (int i = 0; i < products.size(); i++) {
+            totalPrice += products.get(i).getPrice() * quantities.get(i);
+        }
     }
 
     public int getId() {
@@ -35,5 +44,9 @@ public class Order {
 
     public String getOrderDate() {
         return orderDate;
+    }
+
+    public double getTotalPrice() {
+        return totalPrice;
     }
 }

@@ -36,4 +36,9 @@
     <string name="autor">Autor: %1$s</string>
     <string name="cart">Koszyk: %1$d</string>
     <string name="total_price">Razem: %.2f PLN</string>
+    <string name="order_number">Zamówienie #%d</string>
+    <string name="order_date">Data: %s</string>
+    <string name="order_total">Razem: %.2f PLN</string>
+    <string name="product_quantity">x%d</string>
+    <string name="product_total_price">%.2f PLN</string>
 </resources>

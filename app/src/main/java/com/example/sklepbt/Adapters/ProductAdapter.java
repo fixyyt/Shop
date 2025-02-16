@@ -33,6 +33,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
     private CartUpdateListener listener;
     private List<Product> cart;
     private Map<Product, Integer> productQuantities = new HashMap<>();
+    private static final String CART_PREFS = "cart_preferences";
 
 
     public ProductAdapter(Context context, List<Product> productList) {
@@ -79,7 +80,11 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         holder.removeFromCart.setOnClickListener(v -> {
             int currentQuantity = productQuantities.getOrDefault(product, 0);
             if (currentQuantity > 0) {
-                productQuantities.put(product, currentQuantity - 1);
+                if (currentQuantity == 1) {
+                    productQuantities.remove(product);
+                } else {
+                    productQuantities.put(product, currentQuantity - 1);
+                }
                 notifyItemChanged(position);
                 if (listener != null) {
                     listener.onCartUpdated(getTotalCartSize());
@@ -88,7 +93,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         });
     }
 
-    private int getTotalCartSize() {
+    public int getTotalCartSize() {
         int total = 0;
         for (int quantity : productQuantities.values()) {
             total += quantity;
@@ -133,6 +138,78 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         this.productList.clear();
         this.productList.addAll(updatedProducts);
         notifyDataSetChanged();
+    }
+
+    public void clearCart() {
+        productQuantities.clear();
+        notifyDataSetChanged();
+        if (listener != null) {
+            listener.onCartUpdated(0);
+        }
+        
+        // Wyczyść zapisany stan koszyka
+        android.content.SharedPreferences prefs = context.getSharedPreferences(CART_PREFS, Context.MODE_PRIVATE);
+        prefs.edit().clear().apply();
+    }
+
+    // Metoda do zapisywania stanu koszyka
+    public void saveCartState() {
+        android.content.SharedPreferences prefs = context.getSharedPreferences(CART_PREFS, Context.MODE_PRIVATE);
+        android.content.SharedPreferences.Editor editor = prefs.edit();
+        
+        // Konwertuj mapę na format JSON
+        org.json.JSONObject cartJson = new org.json.JSONObject();
+        for (Map.Entry<Product, Integer> entry : productQuantities.entrySet()) {
+            try {
+                Product product = entry.getKey();
+                org.json.JSONObject productJson = new org.json.JSONObject();
+                productJson.put("id", product.getId());
+                productJson.put("quantity", entry.getValue());
+                cartJson.put(String.valueOf(product.getId()), productJson);
+            } catch (org.json.JSONException e) {
+                e.printStackTrace();
+            }
+        }
+        
+        editor.putString("cart", cartJson.toString());
+        editor.apply();
+    }
+
+    // Metoda do wczytywania stanu koszyka
+    public void loadCartState() {
+        android.content.SharedPreferences prefs = context.getSharedPreferences(CART_PREFS, Context.MODE_PRIVATE);
+        String cartJson = prefs.getString("cart", "{}");
+        
+        try {
+            org.json.JSONObject jsonObject = new org.json.JSONObject(cartJson);
+            productQuantities.clear();
+            
+            // Iteruj po zapisanych produktach
+            org.json.JSONArray keys = jsonObject.names();
+            if (keys != null) {
+                for (int i = 0; i < keys.length(); i++) {
+                    String key = keys.getString(i);
+                    org.json.JSONObject productJson = jsonObject.getJSONObject(key);
+                    int productId = productJson.getInt("id");
+                    int quantity = productJson.getInt("quantity");
+                    
+                    // Znajdź produkt w liście produktów
+                    for (Product product : productList) {
+                        if (product.getId() == productId) {
+                            productQuantities.put(product, quantity);
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            notifyDataSetChanged();
+            if (listener != null) {
+                listener.onCartUpdated(getTotalCartSize());
+            }
+        } catch (org.json.JSONException e) {
+            e.printStackTrace();
+        }
     }
 
 }
